@@ -1,0 +1,125 @@
+/*--------------- 1ra Area: Codigo de Usuario -----------------------*/
+//-------> importaciones, paquetes
+package Analizadores;
+import java_cup.runtime.Symbol;
+import java.util.LinkedList;
+
+//------> Codigo para el parser,variables, metodos
+parser code
+{:
+    public String resultado="";
+    public static LinkedList<TError> TablaES = new LinkedList<TError>(); 
+
+    //Metodo al que se llama automaticamente ante algun error sintactico
+    public void syntax_error(Symbol s)
+    {        
+        String lexema = s.value.toString();
+        int fila = s.right;
+        int columna = s.left;
+        
+        System.out.println("!!!!!!! Error Sintactico Recuperado !!!!!!!");
+        System.out.println("\t\tLexema: "+lexema);
+        System.out.println("\t\tFila: "+(fila+1));
+        System.out.println("\t\tColumna: "+columna);
+        output.setForeground(Color.red);
+        output.setText("! Error Sintactico Recuperado !"+"\nLexema: "+lexema+"\nLinea: "+(fila+1)+", Columna: "+columna);
+        TError datos = new TError(lexema,fila,columna,"Error Sintactico","Caracter no esperado");
+        TablaES.add(datos);
+       
+        
+    }
+
+    //Metodo al que se llama en el momento en que ya no es posible una recuperacion de errores
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception
+    {        
+        String lexema = s.value.toString();
+        int fila = s.right;
+        int columna = s.left;
+        
+        //System.out.println("!!!!!!! Error Sintactico, Panic Mode !!!!!!! ");
+        //System.out.println("\t\tLexema: "+lexema);
+        //System.out.println("\t\tFila: "+fila);
+        //System.out.println("\t\tColumna: "+columna);
+
+        TError datos = new TError(lexema,fila,columna,"Error Sintactico","Caracter no esperado");
+        TablaES.add(datos);
+     
+    }
+:}
+
+//------> Codigo para las acciones gramaticales
+action code
+{:
+:}
+
+/*--------------- 2da Area: Declaraciones -----------------------*/
+//------> declaracion de terminales 
+terminal mas,menos,por,div,para,parc,numero,letra,variables,delimitador,letranum,begin,corizquierdo,corderecho,oracion,main,condiciones,coma;
+terminal String num,declaracion,asignacion,comentarios,tipodato,palabraIF,palabraR,palabraELSE,palabraFOR,palabraROTATE,palabraMOVE_H, palabraMOVE_C,palabraMOVE_M,palabraACTION;
+
+//------> declaracion de no terminales
+non terminal String INICIO,E,PROGRAMA,F,CONDICION,EXPRESION,R,RP,T,TP,I,ASIGNA,INCREMENTO,COM;
+
+//----> precedencia de menor a mayor 
+precedence left condiciones;
+precedence left mas, menos;
+precedence left por, div;
+
+start with INICIO;
+
+/*--------------- 3ra Area: Reglas Semanticas -----------------------*/
+INICIO::=PROGRAMA:a {: resultado=a; :};
+
+PROGRAMA::=begin E corderecho main I corderecho
+                | begin E corderecho main I EXPRESION corderecho;
+            
+//DECLARACION DE VARIABLES
+
+E::= letra declaracion letra asignacion numero delimitador
+    |letra declaracion letranum asignacion numero delimitador
+    |letra declaracion letra asignacion numero delimitador E
+    |letra declaracion letranum asignacion numero delimitador E
+    |letra declaracion letra asignacion declaracion letra delimitador 
+    |letra declaracion letranum asignacion declaracion letranum delimitador
+    |letra declaracion letra asignacion declaracion letranum delimitador E
+    |letra declaracion letranum asignacion declaracion letra delimitador E
+    
+
+    |num:a {: RESULT = a; :};
+
+EXPRESION::= F
+            |F EXPRESION
+            |R
+            |ASIGNA
+            |I;
+
+ASIGNA::= declaracion letra asignacion R;
+
+
+I::= palabraIF CONDICION parc corizquierdo EXPRESION  corderecho
+    |palabraIF CONDICION parc corizquierdo EXPRESION  corderecho palabraELSE EXPRESION corderecho
+    |palabraIF CONDICION parc corizquierdo EXPRESION  corderecho palabraELSE EXPRESION corderecho palabraFOR letra declaracion letra asignacion numero delimitador CONDICION delimitador INCREMENTO parc corizquierdo EXPRESION corderecho
+    |palabraIF CONDICION parc corizquierdo EXPRESION  corderecho palabraELSE EXPRESION corderecho palabraFOR letra declaracion letra asignacion numero delimitador CONDICION delimitador INCREMENTO parc corizquierdo EXPRESION corderecho palabraROTATE COM parc delimitador
+    |palabraIF CONDICION parc corizquierdo EXPRESION  corderecho palabraELSE EXPRESION corderecho palabraFOR letra declaracion letra asignacion numero delimitador CONDICION delimitador INCREMENTO parc corizquierdo EXPRESION corderecho palabraROTATE COM parc delimitador palabraMOVE_H COM parc delimitador
+    |palabraIF CONDICION parc corizquierdo EXPRESION  corderecho palabraELSE EXPRESION corderecho palabraFOR letra declaracion letra asignacion numero delimitador CONDICION delimitador INCREMENTO parc corizquierdo EXPRESION corderecho palabraROTATE COM parc delimitador palabraMOVE_H COM parc delimitador palabraMOVE_C COM parc delimitador
+    |palabraIF CONDICION parc corizquierdo EXPRESION  corderecho palabraELSE EXPRESION corderecho palabraFOR letra declaracion letra asignacion numero delimitador CONDICION delimitador INCREMENTO parc corizquierdo EXPRESION corderecho palabraROTATE COM parc delimitador palabraMOVE_H COM parc delimitador palabraMOVE_C COM parc delimitador palabraMOVE_M COM parc delimitador
+    |palabraIF CONDICION parc corizquierdo EXPRESION  corderecho palabraELSE EXPRESION corderecho palabraFOR letra declaracion letra asignacion numero delimitador CONDICION delimitador INCREMENTO parc corizquierdo EXPRESION corderecho palabraROTATE COM parc delimitador palabraMOVE_H COM parc delimitador palabraMOVE_C COM parc delimitador palabraMOVE_M COM parc delimitador palabraACTION parc delimitador;
+
+
+COM::= numero coma  numero
+        |numero coma declaracion letra
+           |declaracion letra coma numero
+           |declaracion letra coma declaracion letra;
+
+CONDICION::= declaracion letranum condiciones declaracion letranum
+            |declaracion letra condiciones declaracion letra
+            |declaracion letra condiciones declaracion letranum letra declaracion letra asignacion numero delimitador CONDICION delimitador INCREMENTO parc corizquierdo EXPRESION corderecho;
+
+CONDICION::= declaracion letra condiciones declaracion letranum
+            |declaracion letranum condiciones declaracion letra;
+
+INCREMENTO::= declaracion letra mas mas
+            |declaracion letra mas numero;
+
+R::= declaracion letra mas declaracion letra  delimitador;
+    
